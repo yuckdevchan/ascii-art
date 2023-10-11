@@ -1,7 +1,12 @@
-document.getElementById("imageInput").addEventListener("change", function () {
-  const imageInput = document.getElementById("imageInput");
-  const imagePreview = document.getElementById("imagePreview");
+// Get the necessary elements
+const imageInput = document.getElementById("imageInput");
+const imagePreview = document.getElementById("imagePreview");
+const asciiArtContainer = document.getElementById("asciiArt");
+const copyButton = document.getElementById("copyButton");
+const resolutionSlider = document.getElementById("resolutionSlider");
 
+// Add event listener for image input change
+imageInput.addEventListener("change", function () {
   const file = imageInput.files[0];
   if (file) {
     const reader = new FileReader();
@@ -16,42 +21,37 @@ document.getElementById("imageInput").addEventListener("change", function () {
   }
 });
 
-document
-  .getElementById("generateButton")
-  .addEventListener("click", function () {
-    const imageInput = document.getElementById("imageInput");
-    const asciiArtContainer = document.getElementById("asciiArt");
-    const imagePreview = document.getElementById("imagePreview");
+// Add event listener for generate button click
+document.getElementById("generateButton").addEventListener("click", function () {
+  if (!imagePreview.src || !imagePreview.complete) {
+    alert("Please upload an image first.");
+    return;
+  }
 
-    if (!imagePreview.src || !imagePreview.complete) {
-      alert("Please upload an image first.");
-      return;
-    }
+  const file = imageInput.files[0];
+  if (file) {
+    const reader = new FileReader();
 
-    const file = imageInput.files[0];
-    if (file) {
-      const reader = new FileReader();
+    reader.onload = function () {
+      const img = new Image();
+      img.src = reader.result;
 
-      reader.onload = function () {
-        const img = new Image();
-        img.src = reader.result;
-
-        img.onload = function () {
-          const asciiArt = generateAsciiArt(img);
-          asciiArtContainer.textContent = asciiArt;
-        };
+      img.onload = function () {
+        const asciiArt = generateAsciiArt(img);
+        asciiArtContainer.textContent = asciiArt;
       };
+    };
 
-      reader.readAsDataURL(file);
-    }
-  });
+    reader.readAsDataURL(file);
+  }
+});
 
-document.getElementById("copyButton").addEventListener("click", function () {
-  const asciiArt = document.getElementById("asciiArt");
+// Add event listener for copy button click
+copyButton.addEventListener("click", function () {
   const selection = window.getSelection();
   const range = document.createRange();
 
-  range.selectNodeContents(asciiArt);
+  range.selectNodeContents(asciiArtContainer);
   selection.removeAllRanges();
   selection.addRange(range);
 
@@ -61,14 +61,21 @@ document.getElementById("copyButton").addEventListener("click", function () {
   alert("Output copied to clipboard!");
 });
 
+// Add event listener for resolution slider change
+resolutionSlider.addEventListener("input", function () {
+  const sliderValue = parseInt(resolutionSlider.value);
+  const maxWidth = 100 * sliderValue;
+  const maxHeight = 100 * sliderValue;
+});
+
 function generateAsciiArt(image) {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  const maxWidth = 100;
-  const maxHeight = 100;
-
-  // Calculate the aspect ratio for resizing the image
   const aspectRatio = image.width / image.height;
+  const sliderValue = parseInt(resolutionSlider.value);
+  const maxWidth = 100 * sliderValue;
+  const maxHeight = 100 * sliderValue;
+
   let newWidth = maxWidth;
   let newHeight = newWidth / aspectRatio;
 
@@ -78,7 +85,7 @@ function generateAsciiArt(image) {
   }
 
   canvas.width = newWidth;
-  canvas.height = newHeight * 2; // Double the height for square-like characters
+  canvas.height = newHeight * 2;
   context.drawImage(image, 0, 0, newWidth, newHeight);
 
   const imageData = context.getImageData(0, 0, newWidth, newHeight).data;
@@ -94,7 +101,7 @@ function generateAsciiArt(image) {
       const asciiChar = getAsciiChar(grayValue);
       asciiArt += asciiChar;
     }
-    asciiArt += "\n"; // Add a newline after each row of ASCII characters
+    asciiArt += "\n";
   }
 
   return asciiArt;
